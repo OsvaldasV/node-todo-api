@@ -50,9 +50,27 @@ app.get('/todos/:id', (req, res) => {
 		// {todo} geriau nes leidzia flexibility, jei reik dar kazka pridet lyginant su tiesiog todo
 		res.send({todo});
 	}).catch((e) => {
-		res.status(400).send(e);
+		res.status(400).send();
 	});
 		
+});
+
+app.delete('/todos/:id', (req,res) => {
+	// get the id
+	var id = req.params.id;
+	if(!ObjectID.isValid(id)) {
+		// 404 if not valid
+		return res.status(404).send('Id not valid');
+	}
+	// remove todo by id
+	Todo.findByIdAndRemove(id).then((todo) => {
+		if(!todo) {
+			return res.status(404).send();
+		}
+		res.status(200).send({todo});
+	}).catch((e) => {
+		res.status(400).send();
+	});
 });
 
 app.listen(port, () => {
