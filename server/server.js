@@ -1,6 +1,7 @@
-var {ObjectID} = require('mongodb');
-var express = require('express');
-var bodyParser = require('body-parser');
+const _ = require('lodash');
+const {ObjectID} = require('mongodb');
+const express = require('express');
+const bodyParser = require('body-parser');
 // panaudoja destructioring es6, ikelia priklausomybe ir uzraso taip :
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
@@ -72,6 +73,34 @@ app.delete('/todos/:id', (req,res) => {
 		res.status(400).send();
 	});
 });
+
+app.patch('/todos/:id', (req,res) => {
+	var id = req.params.id;
+	// pick is lodash bibliotekos paima tas properties, kuriam mum reikia, jei jos egzistuoja ir taip apsaugo, kad useris beleko neprivestu
+	var body = _.pick(req.body, ['text', 'completed']);
+
+	if(!ObjectID.isValid(id)) {
+		// 404 if not valid
+		return res.status(404).send('Id not valid');
+	}
+
+	if(_.isBoolean(body.completed) && body.completed) {
+		body.completedAt = new Date().getTime();
+	} else {
+		body.completed = false;
+		body.completedAt = null;
+	}
+	// set is mongodb operatoriu ateina
+	Todo.findByIdAndUpdate(id, {$set:body}, {new: true}).then((todo) => {
+		if(!todo) {
+			return res.status(404).send();
+		}
+
+		res.send({todo});
+	}).catch((e) => {
+		res.status(400).send();
+	})
+})
 
 app.listen(port, () => {
 	console.log(`Started on port ${port}`);
