@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
+var {authenticate} = require('./middleware/authenticate');
 
 var app = express();
 const port = process.env.PORT;
@@ -93,6 +94,7 @@ app.patch('/todos/:id', (req,res) => {
 		body.completedAt = null;
 	}
 	// set is mongodb operatoriu ateina
+	// pirmas argumentas id, antras argumentas values on our object, trecia argumentas yra options kaip kad mongodb-update returnOriginal : false ,kur yra, tai jis grazina new objekta be originalo, tai cia nustatom, kad grazintu new.
 	Todo.findByIdAndUpdate(id, {$set:body}, {new: true}).then((todo) => {
 		if(!todo) {
 			return res.status(404).send();
@@ -116,6 +118,11 @@ app.post('/users', (req,res) => {
 		console.log(e);
 		res.status(400).send(e);
 	});
+});
+
+// kad route panaudotu middleware nurodom kintamaji kaip antra argumenta
+app.get('/users/me', authenticate, (req,res) => {
+	res.send(req.user);
 });
 
 app.listen(port, () => {
